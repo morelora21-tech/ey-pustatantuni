@@ -1,0 +1,43 @@
+{
+ "texts": {},
+ "photos": [
+  {
+   "src": "uploads/g1.webp",
+   "k": "k23",
+   "cut": true
+  },
+  {
+   "src": "uploads/g2.webp",
+   "k": "k24",
+   "cut": true
+  },
+  {
+   "src": "uploads/g3.jpg",
+   "k": "k25"
+  }
+ ],
+ "videos": [
+  {
+   "src": "videolar/v1.mp4",
+   "poster": "videolar/v1.jpg"
+  },
+  {
+   "src": "videolar/v2.mp4",
+   "poster": "videolar/v2.jpg"
+  },
+  {
+   "src": "videolar/v3.mp4",
+   "poster": "videolar/v3.jpg"
+  },
+  {
+   "src": "videolar/v4.mp4",
+   "poster": "videolar/v4.jpg"
+  }
+ ],
+ "settings": {
+  "phone1": "+905414785399",
+  "phone2": "+905354657506",
+  "wa": "905414785399",
+  "maps": "https://maps.app.goo.gl/XBXMHPtPvEcF48g58?g_st=ipc"
+ }
+}

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Yönetim Paneli · Eyüp Usta Tantuni</title>
+<style>
+:root{--bg:#0b0a08;--card:#16130e;--line:#2c261b;--fg:#f6f1e6;--mut:#a39a89;--y:#ffb800;--red:#ef5350;--ok:#43a047}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.top{position:sticky;top:0;z-index:20;background:rgba(11,10,8,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.top h1{font-size:17px;margin:0}.top h1 small{display:block;color:var(--mut);font-weight:400;font-size:12px}
+.btn{background:var(--y);color:#1a1200;border:0;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer}.btn.g{background:transparent;color:var(--fg);border:1px solid var(--line);font-weight:600}.btn.r{background:transparent;color:var(--red);border:1px solid var(--red)}.btn.s{padding:6px 10px;font-size:13px;border-radius:8px}.btn:disabled{opacity:.5;cursor:default}
+.tabs{display:flex;gap:6px;padding:12px 16px 0;max-width:980px;margin:0 auto;overflow-x:auto}.tab{padding:9px 14px;border-radius:10px 10px 0 0;border:1px solid var(--line);border-bottom:0;background:var(--card);cursor:pointer;white-space:nowrap;color:var(--mut)}.tab.on{color:#1a1200;background:var(--y);border-color:var(--y);font-weight:700}
+main{max-width:980px;margin:0 auto;padding:16px}.panel{background:var(--card);border:1px solid var(--line);border-radius:0 14px 14px 14px;padding:16px}
+h2{font-size:15px;margin:22px 0 10px;color:var(--y);letter-spacing:.04em;text-transform:uppercase}h2:first-child{margin-top:0}
+.f{position:relative;margin-bottom:14px}.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+.f textarea,.f input,.sel{width:100%;background:#0e0c09;border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical}.f textarea:focus,.f input:focus{outline:2px solid var(--y)}
+.hint{font-size:12px;color:var(--mut);margin-top:4px}.f.mod label::after{content:" ●";color:var(--y)}.rs{position:absolute;right:6px;top:0;background:none;border:0;color:var(--mut);cursor:pointer;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}.card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0e0c09}.card .im{aspect-ratio:4/3;background:#000 center/cover no-repeat;display:grid;place-items:center;color:var(--mut);font-size:13px}.card .im.v{aspect-ratio:9/16}.card .cb{padding:10px;display:flex;flex-direction:column;gap:8px}.card .row{display:flex;gap:6px;flex-wrap:wrap}
+.note{background:#1f1a10;border:1px solid #4a3b12;border-radius:10px;padding:10px 12px;font-size:13px;color:#e8d9a8;margin-bottom:14px}
+.login{max-width:380px;margin:12vh auto;padding:0 16px}.login .panel{border-radius:16px}.login h1{margin:0 0 4px;font-size:20px}.login p{color:var(--mut);margin:0 0 16px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:50;max-width:92%;display:none}#toast.ok{border-color:var(--ok)}#toast.err{border-color:var(--red)}
+.bar{height:6px;background:#0e0c09;border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--y);width:0}
+@media(max-width:560px){main{padding:10px}.panel{padding:12px}}
+</style></head><body>
+<div id="app"></div><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),LANGS=[['tr','Türkçe'],['en','English'],['ar','العربية'],['uk','Українська'],['de','Deutsch'],['ru','Русский'],['fr','Français'],['es','Español'],['fa','فارسی']];
+const GR=[['Menü',[0,1,2,3,4]],['Giriş bölümü (en üst)',[5,6,7,8,9,10]],['Rozetler',[13,14,15,16]],['Video şeridi',[11,12]],['Hakkımızda',[17,18,19,20]],['Dürüm animasyonu',[40,41,42,43,44,45,46]],['Galeri',[21,22,23,24,25]],['Videolar başlığı',[47]],['Hizmetler',[26,27,28,29,30,31,32]],['İletişim',[33,34,35,36,37,38,39]],['Diğer',['_wt','_tt']]];
+const NAMES={_wt:'WhatsApp hazır mesajı (müşteri yazmaya başlarken)',_tt:'Tarayıcı sekmesi başlığı'};
+const MAXV=50*1048576;
+let S={cfg:null,c:null,defs:null,lang:'tr',tab:'texts',dirty:false,pend:{}};
+const h=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m,t){const e=$('#toast');e.textContent=m;e.className=t||'';e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',t==='err'?7000:3200)}
+const enc=p=>p.split('/').map(encodeURIComponent).join('/');
+const API=()=>localStorage.getItem('eu_api')||'https://api.github.com';
+const DIR=()=>S.cfg.dir||'',FP=p=>DIR()+p,pu=p=>S.pend[p]?S.pend[p].url:p;
+async function gh(path,opt){opt=opt||{};const c=S.cfg;const r=await fetch(API()+'/repos/'+c.repo+path,{method:opt.method||'GET',body:opt.body,headers:Object.assign({'Authorization':'Bearer '+c.token,'Accept':'application/vnd.github+json'},opt.headers||{})});
+ if(!r.ok){let m='';try{m=(await r.json()).message}catch(e){}const e=new Error(r.status===401?'Token geçersiz veya süresi dolmuş':r.status===403?'Token\'ın bu depoya yazma izni yok (Contents: Read and write olmalı)':r.status===404?'Depo veya dal bulunamadı. Depo adını, dal adını ve token izinlerini kontrol edin':('GitHub hatası '+r.status+(m?': '+m:'')));e.status=r.status;throw e}return r}
+const J=async(p,o)=>(await gh(p,o)).json();
+function b64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(new Error('Dosya okunamadı'));r.readAsDataURL(blob)})}
+function strB64(s){let b='';new TextEncoder().encode(s).forEach(x=>b+=String.fromCharCode(x));return btoa(b)}
+const rid=()=>[...crypto.getRandomValues(new Uint8Array(8))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function head(){const r=await J('/git/ref/heads/'+encodeURIComponent(S.cfg.branch).replace(/%2F/g,'/'));const cm=await J('/git/commits/'+r.object.sha);return{sha:r.object.sha,tree:cm.tree.sha}}
+async function listTree(){const hd=await head();const t=await J('/git/trees/'+hd.tree+'?recursive=1');return t.tree.filter(x=>x.type==='blob').map(x=>x.path)}
+async function commit(files,msg){for(let t=0;t<2;t++){try{const hd=await head(),tree=[];
+ for(const f of files){if(f.del)tree.push({path:f.path,mode:'100644',type:'blob',sha:null});else{const b=await J('/git/blobs',{method:'POST',body:JSON.stringify({content:f.b64,encoding:'base64'})});tree.push({path:f.path,mode:'100644',type:'blob',sha:b.sha})}}
+ const nt=await J('/git/trees',{method:'POST',body:JSON.stringify({base_tree:hd.tree,tree})});
+ const nc=await J('/git/commits',{method:'POST',body:JSON.stringify({message:msg,tree:nt.sha,parents:[hd.sha]})});
+ await gh('/git/refs/heads/'+S.cfg.branch,{method:'PATCH',body:JSON.stringify({sha:nc.sha})});return}catch(e){if(t===1||e.status!==422)throw e}}}
+const dirty=()=>{S.dirty=true;const b=$('#save');if(b){b.disabled=false;b.textContent='Kaydet ●'}};
+window.onbeforeunload=e=>{if(S.dirty){e.preventDefault();e.returnValue=''}};
+
+function clean(s){s=String(s).slice(0,2000);return s.replace(/<(?!\/?(br|em|small|strong)\b)[^>]*>/gi,'').replace(/<(br|em|small|strong)\b[^>]*>/gi,'<$1>')}
+const okp=p=>typeof p==='string'&&/^(uploads|videolar)\/[A-Za-z0-9._-]+$/.test(p)&&!p.includes('..');
+function cleanContent(c){const o={texts:{},photos:[],videos:[],settings:{}};
+ for(const [l] of LANGS){const t=c.texts[l];if(!t)continue;for(const k in t){if(/^(k\d{1,3}|_wt|_tt)$/.test(k)&&typeof t[k]==='string'){(o.texts[l]=o.texts[l]||{})[k]=k[0]==='_'?t[k].replace(/<[^>]*>/g,'').slice(0,300):clean(t[k])}}}
+ for(const p of c.photos.slice(0,60)){if(!okp(p.src))continue;const it={src:p.src};if(p.k&&/^k\d{1,3}$/.test(p.k))it.k=p.k;else if(p.cap)it.cap=String(p.cap).replace(/<[^>]*>/g,'').trim().slice(0,160);if(p.cut)it.cut=true;o.photos.push(it)}
+ for(const v of c.videos.slice(0,30)){if(!okp(v.src))continue;const it={src:v.src};if(okp(v.poster))it.poster=v.poster;o.videos.push(it)}
+ const s=c.settings||{};for(const k of['phone1','phone2']){const x=String(s[k]||'').replace(/[^0-9+]/g,'');if(x.length>=10&&x.length<=15)o.settings[k]=x}
+ const w=String(s.wa||'').replace(/\D/g,'');if(w.length>=10&&w.length<=15)o.settings.wa=w;const m=String(s.maps||'').trim();if(/^https:\/\//.test(m)&&m.length<=300)o.settings.maps=m;return o}
+
+function boot(){let c=null;try{c=JSON.parse(localStorage.getItem('eu_gh')||'null')}catch(e){}if(c&&c.repo&&c.token){S.cfg=c;enter().catch(e=>{toast(e.message,'err');connect()})}else connect()}
+function connect(){let pre='';const m=location.hostname.match(/^([^.]+)\.github\.io$/);if(m){const seg=location.pathname.split('/')[1];pre=m[1]+'/'+(seg&&!/\.html?$/.test(seg)?seg:m[1]+'.github.io')}
+ const c=S.cfg||{};$('#app').innerHTML=`<div class="login" style="max-width:520px"><div class="panel"><h1>🌯 Eyüp Usta · Yönetim</h1><p>Panel, değişiklikleri sitenizin GitHub deposuna kaydeder; Netlify / GitHub Pages / Vercel siteyi kendiliğinden günceller. Bir kerelik bağlantı gerekir.</p>
+<div class="f"><label>GitHub deposu (kullanıcı/depo-adı)</label><input id="rp" placeholder="ornek/eyup-usta-site" value="${h(c.repo||pre)}"></div>
+<div class="f"><label>Dal</label><input id="br" value="${h(c.branch||'main')}"></div>
+<div class="f"><label>Site dosyaları depoda alt klasördeyse klasör adı (çoğu zaman boş bırakın)</label><input id="dr" value="${h(c.dir||'')}" placeholder="boş"></div>
+<div class="f"><label>Erişim anahtarı (token)</label><input id="tk" type="password" autocomplete="off" value="${h(c.token||'')}"></div>
+<button class="btn" id="go" style="width:100%">Bağlan</button>
+<details style="margin-top:14px"><summary style="cursor:pointer;color:var(--y)">Erişim anahtarı nasıl alınır?</summary><ol class="hint" style="line-height:1.7;padding-left:18px">
+<li>GitHub'a girin → sağ üst profil → <b>Settings</b> → en altta <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>.</li>
+<li><b>Repository access:</b> Only select repositories → sitenizin deposunu seçin.</li>
+<li><b>Permissions → Repository permissions → Contents:</b> <b>Read and write</b>.</li>
+<li><b>Generate token</b> deyip çıkan kodu buraya yapıştırın. Kod yalnızca bu cihazın tarayıcısında saklanır; kimseyle paylaşmayın.</li></ol></details></div></div>`;
+ const go=async()=>{const cfg={repo:$('#rp').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'').replace(/\/$/,''),branch:$('#br').value.trim()||'main',dir:$('#dr').value.trim().replace(/^\/+|\/+$/g,''),token:$('#tk').value.trim()};
+  if(!/^[\w.-]+\/[\w.-]+$/.test(cfg.repo)||!cfg.token)return toast('Depo adı (kullanıcı/depo) ve token gerekli','err');if(cfg.dir)cfg.dir+='/';S.cfg=cfg;$('#go').disabled=true;$('#go').textContent='Bağlanıyor…';
+  try{await head();localStorage.setItem('eu_gh',JSON.stringify(cfg));await enter()}catch(e){$('#go').disabled=false;$('#go').textContent='Bağlan';toast(e.message,'err')}};
+ $('#go').onclick=go;$('#app').onkeydown=e=>{if(e.key==='Enter')go()}}
+async function enter(){const d=await fetch('defaults.json?'+Date.now()).then(r=>r.json());let c=null;
+ try{const r=await gh('/contents/'+enc(FP('content.json'))+'?ref='+encodeURIComponent(S.cfg.branch),{headers:{Accept:'application/vnd.github.raw+json'}});c=JSON.parse(await r.text())}catch(e){if(e.status&&e.status!==404)throw e}
+ if(!c)c=await fetch('content.json?'+Date.now()).then(r=>r.ok?r.json():{}).catch(()=>({}));
+ c.texts=(c.texts&&!Array.isArray(c.texts))?c.texts:{};c.photos=c.photos||[];c.videos=c.videos||[];c.settings=c.settings||{};S.c=c;S.defs=d;S.dirty=false;shell()}
+function shell(){$('#app').innerHTML=`<div class="top"><h1>🌯 Yönetim Paneli<small>Eyüp Usta Tantuni</small></h1><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn g s" href="./" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center">Siteyi aç ↗</a><button class="btn s" id="save" disabled>Kaydet</button><button class="btn g s" id="out">Çıkış</button></div></div>
+<div class="tabs">${[['texts','Yazılar'],['photos','Fotoğraflar'],['videos','Videolar'],['set','Ayarlar']].map(t=>`<div class="tab${S.tab===t[0]?' on':''}" data-t="${t[0]}">${t[1]}</div>`).join('')}</div><main><div class="panel" id="pn"></div></main>`;
+ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{S.tab=t.dataset.t;shell()});
+ $('#save').onclick=save;$('#out').onclick=()=>{if(S.dirty&&!confirm('Kaydedilmemiş değişiklikler var. Çıkılsın mı?'))return;S.dirty=false;localStorage.removeItem('eu_gh');S.cfg=null;connect()};
+ if(S.dirty){$('#save').disabled=false;$('#save').textContent='Kaydet ●'}
+ ({texts:rTexts,photos:rPhotos,videos:rVideos,set:rSet})[S.tab]()}
+async function save(){const b=$('#save');b.disabled=true;b.textContent='Kaydediliyor…';try{
+ const c=cleanContent(S.c),used=new Set(),files=[];[...c.photos,...c.videos].forEach(i=>{used.add(i.src);if(i.poster)used.add(i.poster)});
+ for(const p of used){const q=S.pend[p];if(q&&!q.up)files.push({path:FP(p),b64:await b64(q.blob),pp:p})}
+ files.push({path:FP('content.json'),b64:strB64(JSON.stringify(c,null,1)+'\n')});
+ const d=DIR();for(const f of await listTree()){if(!f.startsWith(d))continue;const rel=f.slice(d.length);if(/^(uploads|videolar)\/u_[A-Za-z0-9._-]+$/.test(rel)&&!used.has(rel))files.push({path:f,del:1})}
+ await commit(files,'Yönetim paneli: içerik güncellendi');
+ files.forEach(f=>{if(f.pp&&S.pend[f.pp])S.pend[f.pp].up=1});S.c.texts=c.texts;S.dirty=false;b.textContent='Kaydet';toast('Kaydedildi ✓ Site 1-2 dakika içinde güncellenir','ok')}catch(e){b.disabled=false;b.textContent='Kaydet ●';toast(e.message,'err')}}
+
+const defv=(l,k)=>(S.defs[l]||{})[k]||'',val=(l,k)=>(S.c.texts[l]&&S.c.texts[l][k]!=null)?S.c.texts[l][k]:defv(l,k),isMod=(l,k)=>!!(S.c.texts[l]&&S.c.texts[l][k]!=null);
+function rTexts(){const l=S.lang,rtl=(l==='ar'||l==='fa');
+ let o=`<div class="f"><label>Düzenlenecek dil</label><select class="sel" id="lang">${LANGS.map(x=>`<option value="${x[0]}"${x[0]===l?' selected':''}>${x[1]}</option>`).join('')}</select></div>
+<div class="note">Metinleri değiştirin ve <b>Kaydet</b>'e basın. <code>&lt;br&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;small&gt;</code> işaretleri satır başı ve vurgu içindir, silmeyin. Sarı nokta (●) o metnin değiştirildiğini gösterir; ↺ ile eski haline dönebilirsiniz.</div>`;
+ for(const [g,ks] of GR){o+=`<h2>${g}</h2>`;for(const n of ks){const k=typeof n==='number'?'k'+n:n,v=val(l,k);if(!(k in(S.defs[l]||{})))continue;
+  o+=`<div class="f${isMod(l,k)?' mod':''}"><label>${h(NAMES[k]||('Metin · '+(defv('tr',k)||'').replace(/<[^>]*>/g,' ').slice(0,38)))}</label><textarea data-k="${k}" dir="${rtl?'rtl':'ltr'}" rows="${Math.max(1,Math.min(6,Math.ceil(v.length/58)))}">${h(v)}</textarea>${l!=='tr'?`<div class="hint">Türkçe: ${h(defv('tr',k)).slice(0,140)}</div>`:''}${isMod(l,k)?`<button class="rs" data-r="${k}" title="Eski haline dön">↺ sıfırla</button>`:''}</div>`}}
+ $('#pn').innerHTML=o;$('#lang').onchange=e=>{S.lang=e.target.value;rTexts()};
+ document.querySelectorAll('#pn textarea').forEach(t=>t.oninput=()=>{const k=t.dataset.k;S.c.texts[l]=S.c.texts[l]||{};if(t.value===defv(l,k)){delete S.c.texts[l][k]}else S.c.texts[l][k]=t.value;t.closest('.f').classList.toggle('mod',isMod(l,k));dirty()});
+ document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{if(S.c.texts[l])delete S.c.texts[l][b.dataset.r];dirty();const y=scrollY;rTexts();scrollTo(0,y)})}
+
+function mv(a,i,d){const j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];dirty()}
+function rPhotos(){const P=S.c.photos;let o=`<div class="note">Fotoğraf ekleyin veya silin, ◀ ▶ ile sırasını değiştirin. İşiniz bitince <b>Kaydet</b>'e basın. Büyük fotoğraflar otomatik küçültülür.</div>
+<div style="margin-bottom:14px"><button class="btn" id="addp">＋ Fotoğraf ekle</button><input type="file" id="fp" accept="image/*" multiple hidden></div><div class="grid">`;
+ P.forEach((p,i)=>{o+=`<div class="card"><div class="im" style="background-image:url('${h(pu(p.src))}');${p.cut?'background-size:contain;background-color:#1a140d':''}"></div><div class="cb">${p.k?`<div class="hint">Başlık: "Yazılar" sekmesi → Galeri</div>`:`<input data-c="${i}" placeholder="Başlık (isteğe bağlı)" value="${h(p.cap||'')}" maxlength="160" style="width:100%;background:#0e0c09;border:1px solid var(--line);border-radius:8px;padding:7px">`}
+ <div class="row"><button class="btn g s" data-m="${i},-1">◀</button><button class="btn g s" data-m="${i},1">▶</button><button class="btn r s" data-d="${i}">Sil</button></div></div></div>`});
+ o+=`</div>${P.length?'':'<p class="hint">Henüz fotoğraf yok.</p>'}`;$('#pn').innerHTML=o;
+ $('#addp').onclick=()=>$('#fp').click();$('#fp').onchange=async e=>{const fs=[...e.target.files];let ok=0,err='';
+  for(const f of fs){try{const b=await shrink(f),ext=b.type==='image/png'?'png':b.type==='image/webp'?'webp':'jpg',path='uploads/u_'+rid()+'.'+ext;S.pend[path]={blob:b,url:URL.createObjectURL(b)};S.c.photos.push({src:path});ok++;dirty()}catch(x){err=f.name+': '+x.message}}
+  rPhotos();if(ok)toast('Eklendi. Kaydet\'e basmayı unutmayın','ok');else if(err)toast(err,'err')};
+ document.querySelectorAll('[data-c]').forEach(i=>i.oninput=()=>{P[+i.dataset.c].cap=i.value;dirty()});
+ document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const[i,d]=b.dataset.m.split(',').map(Number);mv(P,i,d);rPhotos()});
+ document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('Bu fotoğraf silinsin mi?')){P.splice(+b.dataset.d,1);dirty();rPhotos()}})}
+function shrink(f){return new Promise((res,rej)=>{if(!/^image\/(jpeg|png|webp)$/.test(f.type))return rej(new Error('JPG, PNG veya WEBP olmalı'));const im=new Image(),u=URL.createObjectURL(f);im.onerror=()=>rej(new Error('Resim okunamadı'));
+ im.onload=()=>{URL.revokeObjectURL(u);const m=1600,s=Math.min(1,m/Math.max(im.width,im.height));if(s===1&&f.size<1.5e6)return res(f);const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  const png=f.type==='image/png';c.toBlob(b=>b?res(b):rej(new Error('Küçültülemedi')),png?'image/png':'image/jpeg',.86)};im.src=u})}
+
+function rVideos(){const V=S.c.videos;let o=`<div class="note">Video ekleyin veya silin. Önerilen: <b>MP4</b>, kısa (30 sn civarı), dikey, 720p veya altı. Dosya başına en fazla <b>50 MB</b>. İşiniz bitince <b>Kaydet</b>'e basın.</div>
+<div style="margin-bottom:14px"><button class="btn" id="addv">＋ Video ekle</button><input type="file" id="fv" accept="video/mp4,video/webm" hidden></div><div class="grid">`;
+ V.forEach((v,i)=>{o+=`<div class="card"><div class="im v" style="${v.poster?`background-image:url('${h(pu(v.poster))}')`:''}">${v.poster?'':'Önizleme yok'}</div><div class="cb"><div class="row"><button class="btn g s" data-m="${i},-1">◀</button><button class="btn g s" data-m="${i},1">▶</button><button class="btn r s" data-d="${i}">Sil</button></div></div></div>`});
+ o+=`</div>${V.length?'':'<p class="hint">Henüz video yok. Videolar bölümü sitede gizlenir.</p>'}`;$('#pn').innerHTML=o;
+ $('#addv').onclick=()=>$('#fv').click();$('#fv').onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>MAXV)return toast(`Dosya çok büyük (${Math.round(f.size/1048576)} MB). En fazla 50 MB. Videoyu küçültüp tekrar deneyin.`,'err');
+  if(!/^video\/(mp4|webm)$/.test(f.type))return toast('Sadece MP4 veya WEBM video eklenebilir','err');
+  toast('Önizleme hazırlanıyor…');const pf=await poster(f),vp='videolar/u_'+rid()+(f.type==='video/webm'?'.webm':'.mp4'),it={src:vp};S.pend[vp]={blob:f,url:URL.createObjectURL(f)};
+  if(pf){const pp='videolar/u_'+rid()+'.jpg';S.pend[pp]={blob:pf,url:URL.createObjectURL(pf)};it.poster=pp}S.c.videos.push(it);dirty();rVideos();toast('Eklendi. Kaydet\'e basmayı unutmayın','ok')};
+ document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const[i,d]=b.dataset.m.split(',').map(Number);mv(V,i,d);rVideos()});
+ document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('Bu video silinsin mi?')){V.splice(+b.dataset.d,1);dirty();rVideos()}})}
+function poster(f){return new Promise(res=>{const v=document.createElement('video'),u=URL.createObjectURL(f);v.muted=true;v.playsInline=true;v.preload='auto';let done=false;const fin=r=>{if(done)return;done=true;URL.revokeObjectURL(u);res(r)};setTimeout(()=>fin(null),7000);v.onerror=()=>fin(null);
+ v.onloadeddata=()=>{v.currentTime=Math.min(1.2,(v.duration||2)/3)};v.onseeked=()=>{try{const w=360,c=document.createElement('canvas');c.width=w;c.height=Math.round(w*v.videoHeight/v.videoWidth)||640;c.getContext('2d').drawImage(v,0,0,c.width,c.height);c.toBlob(b=>fin(b),'image/jpeg',.8)}catch(e){fin(null)}};v.src=u})}
+
+function rSet(){const s=S.c.settings;$('#pn').innerHTML=`<h2>İletişim</h2><div class="f"><label>Ana telefon (arama düğmeleri, örn. +905414785399)</label><input data-s="phone1" value="${h(s.phone1||'')}" inputmode="tel"></div>
+<div class="f"><label>İkinci telefon (iletişim bölümü)</label><input data-s="phone2" value="${h(s.phone2||'')}" inputmode="tel"></div>
+<div class="f"><label>WhatsApp numarası (başında + olmadan, örn. 905414785399)</label><input data-s="wa" value="${h(s.wa||'')}" inputmode="numeric"></div>
+<div class="f"><label>Harita bağlantısı (https://… Google Maps linki)</label><input data-s="maps" value="${h(s.maps||'')}"></div>
+<h2>Bağlantı</h2><p class="hint">Bağlı depo: <b>${h(S.cfg.repo)}</b> (${h(S.cfg.branch)}). Bu cihazdaki erişim anahtarını silmek için "Çıkış"a basın.</p>`;
+ document.querySelectorAll('[data-s]').forEach(i=>i.oninput=()=>{s[i.dataset.s]=i.value.trim();dirty()})}
+boot();
+</script></body></html>
